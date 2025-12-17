@@ -13,7 +13,7 @@
     "@libsql/client": "^0.15.15",
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.45.1",
-    "firebase": "^12.7.0",
+    "firebase-auth-cloudflare-workers": "^2.0.6",
     "hono": "^4.11.1"
   },
   "devDependencies": {
