@@ -15,7 +15,6 @@ app.use(async (c, next) => {
     c.env.lvlup_learn_kv
   )
 
-  // ★ Secret から Service Account JSON を取得
   const saJson = c.env.FIREBASE_SERVICE_ACCOUNT!;
   const credentials = JSON.parse(saJson) as { project_id: string }
 
