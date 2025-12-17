@@ -16,7 +16,7 @@ app.use(async (c, next) => {
   )
 
   // ★ Secret から Service Account JSON を取得
-  const saJson = process.env.FIREBASE_SERVICE_ACCOUNT!;
+  const saJson = c.env.FIREBASE_SERVICE_ACCOUNT!;
   const credentials = JSON.parse(saJson) as { project_id: string }
 
   const auth = Auth.getOrInitialize(
