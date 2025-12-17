@@ -1,11 +1,10 @@
 import { Hono } from 'hono'
-import { Auth, WorkersKVStoreSingle, ServiceAccountCredential } from 'firebase-auth-cloudflare-workers';
-import type { UserRecord } from 'firebase-auth-cloudflare-workers/dist/main/user-record';
-import * as credentials from '../lvlup-learn-firebase-adminsdk-fbsvc-7b90f9fa3c.json';
-import type { Context, Next } from 'hono';
+import { Auth, WorkersKVStoreSingle, ServiceAccountCredential } from 'firebase-auth-cloudflare-workers'
+import type { UserRecord } from 'firebase-auth-cloudflare-workers/dist/main/user-record'
+import { type Context, type Next } from 'hono'
 
 type Variables = {
-  user?: UserRecord;
+  user?: UserRecord
 }
 
 const app = new Hono<{ Bindings: Cloudflare.Env, Variables: Variables }>()
@@ -14,28 +13,32 @@ app.use(async (c, next) => {
   const kvStoreAuth = WorkersKVStoreSingle.getOrInitialize(
     c.env.PUBLIC_JWT_CACHE_KEY,
     c.env.lvlup_learn_kv
-  );
+  )
+
+  // ★ Secret から Service Account JSON を取得
+  const saJson = process.env.FIREBASE_SERVICE_ACCOUNT!;
+  const credentials = JSON.parse(saJson) as { project_id: string }
 
   const auth = Auth.getOrInitialize(
     credentials.project_id,
     kvStoreAuth,
-    new ServiceAccountCredential(JSON.stringify(credentials))
-  );
+    new ServiceAccountCredential(saJson)
+  )
 
-  const authz = c.req.header('Authorization');
+  const authz = c.req.header('Authorization')
   if (authz) {
-    const idToken = authz.replace(/^Bearer\s+/i, '');
+    const idToken = authz.replace(/^Bearer\s+/i, '')
     try {
-      const { uid } = await auth.verifyIdToken(idToken);
-      const user = await auth.getUser(uid);
-      c.set('user', user);
-    } catch (err) {
-      return c.json({ error: 'Unauthorized' }, 401);
+      const { uid } = await auth.verifyIdToken(idToken)
+      const user = await auth.getUser(uid)
+      c.set('user', user)
+    } catch {
+      return c.json({ error: 'Unauthorized' }, 401)
     }
   }
 
-  await next();
-});
+  await next()
+})
 
 const mustAuth = async (c: Context, next: Next) => {
   if (!c.get('user')) return c.json({ error: 'Unauthorized' }, 401);

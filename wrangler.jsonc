@@ -4,7 +4,8 @@
 	"main": "src/index.ts",
 	"compatibility_date": "2025-12-16",
 	"vars": {
-		"PUBLIC_JWT_CACHE_KEY": "lvlup_learn_kv"
+		"PUBLIC_JWT_CACHE_KEY": "lvlup_learn_kv",
+		"FIREBASE_SERVICE_ACCOUNT": "./lvlup-learn-firebase-adminsdk-fbsvc-7b90f9fa3c.json"
 	},
 	"d1_databases": [
 		{
