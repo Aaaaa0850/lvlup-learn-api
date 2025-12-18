@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 import { Auth, WorkersKVStoreSingle, ServiceAccountCredential } from 'firebase-auth-cloudflare-workers'
 import type { UserRecord } from 'firebase-auth-cloudflare-workers/dist/main/user-record'
 import { type Context, type Next } from 'hono'
+import schedules from './schedules/schedules'
 
 type Variables = {
   user?: UserRecord
@@ -37,11 +38,14 @@ app.use(async (c, next) => {
   }
 
   await next()
-})
+});
 
 const mustAuth = async (c: Context, next: Next) => {
   if (!c.get('user')) return c.json({ error: 'Unauthorized' }, 401);
   await next();
 };
 
-export default app
+app.use('*', mustAuth);
+app.route('/schedules', schedules);
+
+export default app;
