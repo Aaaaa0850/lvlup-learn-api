@@ -20,7 +20,10 @@
 			"id": "2064d571e5244d7180875261c4f8b4e1",
 			"remote": true
 		}
-	]
+	],
+	"ai": {
+		"binding": "AI"
+	},
 	// "compatibility_flags": [
 	//   "nodejs_compat"
 	// ],
