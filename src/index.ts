@@ -3,6 +3,7 @@ import { Auth, WorkersKVStoreSingle, ServiceAccountCredential } from 'firebase-a
 import type { UserRecord } from 'firebase-auth-cloudflare-workers/dist/main/user-record'
 import { type Context, type Next } from 'hono'
 import schedules from './schedules/schedules'
+import { z } from 'zod'
 
 type Variables = {
   user: UserRecord
