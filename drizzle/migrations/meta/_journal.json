@@ -8,6 +8,13 @@
       "when": 1765993930763,
       "tag": "0000_wide_mindworm",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1766244666963,
+      "tag": "0001_complete_tyrannus",
+      "breakpoints": true
     }
   ]
 }

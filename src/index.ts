@@ -5,7 +5,7 @@ import { type Context, type Next } from 'hono'
 import schedules from './schedules/schedules'
 
 type Variables = {
-  user?: UserRecord
+  user: UserRecord
 }
 
 const app = new Hono<{ Bindings: Cloudflare.Env, Variables: Variables }>()

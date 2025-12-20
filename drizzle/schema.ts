@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { sqliteTable, text, integer, } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, index } from "drizzle-orm/sqlite-core";
 
 export const users = sqliteTable("users", {
   id: text("id").primaryKey(),
@@ -7,16 +7,19 @@ export const users = sqliteTable("users", {
 });
 
 export const schedules = sqliteTable("schedules", {
-  id: text("id").primaryKey().default(sql`(uuid())`),
+  id: text("id").primaryKey(),
   title: text("title"),
   subtitle: text("subtitle"),
   duration: integer("duration"),
   color: text("color"),
   date: text("date"),
+  completed: integer({ mode: 'boolean' }).default(false),
   userId: text("user_id").references(() => users.id),
   createdAt: text().default(sql`(CURRENT_TIMESTAMP)`),
   updatedAt: text()
     .notNull()
     .default(sql`(CURRENT_TIMESTAMP)`)
     .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
-});
+}, (table) => ({
+  userDateIdx: index("user_date_idx").on(table.userId, table.date),
+}));
