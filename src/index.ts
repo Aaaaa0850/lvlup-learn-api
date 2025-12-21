@@ -1,52 +1,50 @@
 import { Hono } from 'hono'
-import { Auth, WorkersKVStoreSingle, ServiceAccountCredential } from 'firebase-auth-cloudflare-workers'
-import type { UserRecord } from 'firebase-auth-cloudflare-workers/dist/main/user-record'
-import { type Context, type Next } from 'hono'
+import { cors } from 'hono/cors';
+import { getAuth, type Session } from './lib/auth';
 import schedules from './schedules/schedules'
-import { z } from 'zod'
 
-type Variables = {
-  user: UserRecord
-}
-
-const app = new Hono<{ Bindings: Cloudflare.Env, Variables: Variables }>()
-
-app.use(async (c, next) => {
-  const kvStoreAuth = WorkersKVStoreSingle.getOrInitialize(
-    c.env.PUBLIC_JWT_CACHE_KEY,
-    c.env.lvlup_learn_kv
-  )
-
-  const saJson = c.env.FIREBASE_SERVICE_ACCOUNT!;
-  const credentials = JSON.parse(saJson) as { project_id: string }
-
-  const auth = Auth.getOrInitialize(
-    credentials.project_id,
-    kvStoreAuth,
-    new ServiceAccountCredential(saJson)
-  )
-
-  const authz = c.req.header('Authorization')
-  if (authz) {
-    const idToken = authz.replace(/^Bearer\s+/i, '')
-    try {
-      const { uid } = await auth.verifyIdToken(idToken)
-      const user = await auth.getUser(uid)
-      c.set('user', user)
-    } catch {
-      return c.json({ error: 'Unauthorized' }, 401)
-    }
-  }
-
-  await next()
-});
-
-const mustAuth = async (c: Context, next: Next) => {
-  if (!c.get('user')) return c.json({ error: 'Unauthorized' }, 401);
-  await next();
+type Bindings = {
+  DB: D1Database;
+  BETTER_AUTH_SECRET: string;
+  BETTER_AUTH_URL: string;
 };
 
-app.use('*', mustAuth);
-app.route('/schedules', schedules);
+type Variables = {
+  user: Session["user"] | null;
+  session: Session["session"] | null;
+}
+
+const app = new Hono<{ Bindings: Bindings, Variables: Variables }>()
+
+app.use(
+  "*",
+  cors({
+    origin: "http://localhost:3000",
+    allowHeaders: ["Content-Type", "Authorization"],
+    allowMethods: ["POST", "GET", "OPTIONS"],
+    exposeHeaders: ["Content-Length"],
+    maxAge: 600,
+    credentials: true,
+  }),
+);
+
+app.on(["POST", "GET"], "/api/auth/*", (c) => {
+  const auth = getAuth(c.env);
+  return auth.handler(c.req.raw);
+});
+
+app.use("/api/*", async (c, next) => {
+  if (c.get("user") || c.req.method === "OPTIONS") return await next();
+
+  const auth = getAuth(c.env);
+  const session = await auth.api.getSession({ headers: c.req.raw.headers });
+
+  c.set("user", session?.user ?? null);
+  c.set("session", session?.session ?? null);
+
+  await next();
+});
+
+app.route('/api/schedules', schedules);
 
 export default app;

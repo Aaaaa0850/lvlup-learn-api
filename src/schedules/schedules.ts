@@ -1,19 +1,22 @@
 import { Hono } from "hono";
+import { type Session } from "../lib/auth";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { drizzle } from "drizzle-orm/d1";
 import { ScheduleTitle, ScheduleSubtitle, ScheduleDuration, color } from "../types/schedule";
 import { schedules } from "../../drizzle/schema";
-import type { UserRecord } from 'firebase-auth-cloudflare-workers/dist/main/user-record'
 import { nanoid } from "nanoid/non-secure";
 import { eq, asc, and, desc, sql } from 'drizzle-orm'
 
 type Bindings = {
-  lvlup_learn: D1Database
+  DB: D1Database;
+  BETTER_AUTH_SECRET: string;
+  BETTER_AUTH_URL: string;
 };
 
 type Variables = {
-  user: UserRecord
+  user: Session["user"] | null;
+  session: Session["session"] | null;
 }
 
 const app = new Hono<{ Bindings: Bindings, Variables: Variables }>()
@@ -34,8 +37,11 @@ app.post('/', zValidator(
     color: color,
   }),
 ), async (c) => {
-  const db = drizzle(c.env.lvlup_learn);
+  const db = drizzle(c.env.DB);
   const user = c.get('user');
+  if (!user) {
+    return c.json({ error: 'Unauthorized' }, 401);
+  }
   const { title, subtitle, duration, color } = c.req.valid("json");
   const id = nanoid();
   const date = generateTomorrowDate()
@@ -47,7 +53,7 @@ app.post('/', zValidator(
       duration,
       color,
       date,
-      userId: user.uid,
+      userId: user.id,
     });
     return c.json({ success: true }, 201);
   } catch (e) {
@@ -57,8 +63,11 @@ app.post('/', zValidator(
 })
 
 app.get('/', async (c) => {
-  const db = drizzle(c.env.lvlup_learn);
+  const db = drizzle(c.env.DB);
   const user = c.get('user');
+  if (!user) {
+    return c.json({ error: 'Unauthorized' }, 401);
+  }
   const date = generateTomorrowDate()
   try {
     const result =
@@ -72,7 +81,7 @@ app.get('/', async (c) => {
       ).from(schedules)
         .where(
           and(
-            eq(schedules.userId, user.uid)
+            eq(schedules.userId, user.id)
             , eq(schedules.date, date)))
         .orderBy(
           desc(sql`case when ${schedules.duration} is null then 1 else 0 end`),
@@ -83,4 +92,5 @@ app.get('/', async (c) => {
     return c.json({}, 500);
   }
 })
+
 export default app;

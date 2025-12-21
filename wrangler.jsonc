@@ -5,6 +5,9 @@
 	"compatibility_date": "2025-12-16",
 	"vars": {
 		"PUBLIC_JWT_CACHE_KEY": "lvlup_learn_kv",
+    "BACKEND_URL": "http://localhost:8787",
+    "FRONTEND_URL": "http://localhost:3000",
+    "crossSubDomainCookies": "localhost",
 	},
 	"d1_databases": [
 		{

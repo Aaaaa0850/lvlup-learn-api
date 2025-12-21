@@ -15,6 +15,13 @@
       "when": 1766244666963,
       "tag": "0001_complete_tyrannus",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1766324386655,
+      "tag": "0002_red_ser_duncan",
+      "breakpoints": true
     }
   ]
 }
