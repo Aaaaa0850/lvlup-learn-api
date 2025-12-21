@@ -2,6 +2,9 @@
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "server",
 	"main": "src/index.ts",
+	"compatibility_flags": [
+    "nodejs_compat"
+  ],
 	"compatibility_date": "2025-12-16",
 	"vars": {
 		"PUBLIC_JWT_CACHE_KEY": "lvlup_learn_kv",
