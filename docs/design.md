@@ -12,7 +12,7 @@
 
 - **バックエンド**: Cloudflare Workers + Hono
 - **フロントエンド**: Nuxt 4 + Cloudflare Pages
-- **認証**: Firebase Authentication
+- **認証**: Better Auth
 - **データベース**: Cloudflare D1 (SQLite)
 - **決済**: Stripe
 - **AI**: Cloudflare Workers AI
@@ -25,13 +25,12 @@
 - **認証必須**: すべてのエンドポイントで認証が必要
 - **レイヤー構成**:
   - Routes: Hono のエンドポイント
-  - Repositories: DB アクセス層
   - Services: ビジネスロジック（必要に応じて）
 
 ### 認証フロー
 
-1. **フロントエンド**: Firebase Client SDK でログイン → ID トークン取得
-2. **バックエンド**: ID トークンを検証 → `c.get('user')` でユーザー情報取得
+1. **フロントエンド**: Better Authでログイン
+2. **バックエンド**: ミドルウェアで検証 → `c.get('user')` でユーザー情報取得
 3. **プラン情報**: D1 Database から取得（毎回確認）
 
 ## データベース設計
