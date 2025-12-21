@@ -1,5 +1,5 @@
 import { sql, relations } from "drizzle-orm";
-import { sqliteTable, text, integer, index } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, index, } from "drizzle-orm/sqlite-core";
 
 export const user = sqliteTable("user", {
   id: text("id").primaryKey(),
@@ -17,6 +17,7 @@ export const user = sqliteTable("user", {
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
   isAnonymous: integer("is_anonymous", { mode: "boolean" }).default(false),
+  stripeCustomerId: text("stripe_customer_id"),
 });
 
 export const session = sqliteTable(
@@ -95,7 +96,7 @@ export const schedules = sqliteTable("schedules", {
   duration: integer("duration"),
   color: text("color"),
   date: text("date"),
-  completed: integer({ mode: 'boolean' }).default(false),
+  completed: integer("completed", { mode: 'boolean' }).default(false),
   userId: text("user_id").references(() => user.id),
   createdAt: text().default(sql`(CURRENT_TIMESTAMP)`),
   updatedAt: text()
@@ -105,6 +106,21 @@ export const schedules = sqliteTable("schedules", {
 }, (table) => ({
   userDateIdx: index("user_date_idx").on(table.userId, table.date),
 }));
+
+export const subscription = sqliteTable("subscription", {
+  id: text("id").primaryKey(),
+  plan: text("plan").notNull(),
+  referenceId: text("reference_id").notNull(),
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  status: text("status").notNull(),
+  periodStart: integer("period_start", { mode: "timestamp" }),
+  periodEnd: integer("period_end", { mode: "timestamp" }),
+  cancelAtPeriodEnd: integer("cancel_at_period_end", { mode: 'boolean' }),
+  seats: integer("seats"),
+  trialStart: integer("trial_start", { mode: "timestamp" }),
+  trialEnd: integer("trial_end", { mode: "timestamp" }),
+});
 
 export const userRelations = relations(user, ({ many }) => ({
   sessions: many(session),
