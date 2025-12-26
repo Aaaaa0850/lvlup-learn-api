@@ -2,16 +2,26 @@ import { Hono } from "hono";
 import { type Session } from "../lib/auth";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
-import { drizzle } from "drizzle-orm/d1";
-import { ScheduleTitle, ScheduleSubtitle, ScheduleDuration, color } from "../types/schedule";
+import {
+  ScheduleTitle,
+  ScheduleSubtitle,
+  ScheduleDuration,
+  color
+} from "../types/schedule";
 import { schedules } from "../../drizzle/schema";
 import { nanoid } from "nanoid/non-secure";
-import { eq, asc, and, desc, sql } from 'drizzle-orm'
+import {
+  eq,
+  asc,
+  and,
+  desc,
+  sql
+} from 'drizzle-orm'
+import { getDB } from "../lib/db";
 
 type Bindings = {
-  DB: D1Database;
-  BETTER_AUTH_SECRET: string;
-  BETTER_AUTH_URL: string;
+  TURSO_URL: string;
+  TURSO_AUTH_TOKEN: string;
 };
 
 type Variables = {
@@ -37,12 +47,14 @@ app.post('/', zValidator(
     color: color,
   }),
 ), async (c) => {
-  const db = drizzle(c.env.DB);
-  const user = c.get('user');
-  if (!user) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
-  const { title, subtitle, duration, color } = c.req.valid("json");
+  const db = getDB(c.env);
+  const user = 'e082e7fe-76b6-4069-b70c-d30b6fb19143';//c.get('user');
+  const {
+    title,
+    subtitle,
+    duration,
+    color
+  } = c.req.valid("json");
   const id = nanoid();
   const date = generateTomorrowDate()
   try {
@@ -53,18 +65,18 @@ app.post('/', zValidator(
       duration,
       color,
       date,
-      userId: user.id,
+      userId: user,//user.id,
     });
     return c.json({ success: true }, 201);
   } catch (e) {
     console.error(e);
-    return c.json({ error: "データベースへの保存に失敗しました" }, 500);
+    return c.json({ error: "スケジュールの保存に失敗しました" }, 500);
   }
 })
 
 app.get('/', async (c) => {
-  const db = drizzle(c.env.DB);
-  const user = c.get('user');
+  const db = getDB(c.env);
+  const user = 'e082e7fe-76b6-4069-b70c-d30b6fb19143';//c.get('user');
   if (!user) {
     return c.json({ error: 'Unauthorized' }, 401);
   }
@@ -81,7 +93,7 @@ app.get('/', async (c) => {
       ).from(schedules)
         .where(
           and(
-            eq(schedules.userId, user.id)
+            eq(schedules.userId, user/*user.id*/)
             , eq(schedules.date, date)))
         .orderBy(
           desc(sql`case when ${schedules.duration} is null then 1 else 0 end`),
@@ -89,7 +101,8 @@ app.get('/', async (c) => {
         );
     return c.json(result, 200);
   } catch (e) {
-    return c.json({}, 500);
+    console.error(e)
+    return c.json({ error: 'スケジュールの取得に失敗しました' }, 500);
   }
 })
 

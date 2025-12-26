@@ -13,7 +13,8 @@ export const ScheduleTitle = z.string()
 export type ScheduleTitle = z.infer<typeof ScheduleTitle>;
 
 export const ScheduleSubtitle = z.string()
-  .max(30, 'サブタイトルは30文字以内である必要があります');
+  .max(30, 'サブタイトルは30文字以内である必要があります')
+  .optional();
 export type ScheduleSubtitle = z.infer<typeof ScheduleSubtitle>;
 
 export const ScheduleDuration = z.number()

@@ -5,36 +5,8 @@
     {
       "idx": 0,
       "version": "6",
-      "when": 1765993930763,
-      "tag": "0000_wide_mindworm",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1766244666963,
-      "tag": "0001_complete_tyrannus",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "6",
-      "when": 1766324386655,
-      "tag": "0002_red_ser_duncan",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "6",
-      "when": 1766329697419,
-      "tag": "0003_omniscient_nightshade",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "6",
-      "when": 1766343098570,
-      "tag": "0004_faulty_gorgon",
+      "when": 1766750309610,
+      "tag": "0000_steady_nocturne",
       "breakpoints": true
     }
   ]

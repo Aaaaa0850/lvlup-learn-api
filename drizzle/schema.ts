@@ -89,15 +89,17 @@ export const verification = sqliteTable(
   (table) => [index("verification_identifier_idx").on(table.identifier)],
 );
 
-export const schedules = sqliteTable("schedules", {
+export const schedules = sqliteTable(
+  "schedules", {
   id: text("id").primaryKey(),
   title: text("title"),
   subtitle: text("subtitle"),
   duration: integer("duration"),
   color: text("color"),
-  date: text("date"),
+  date: text("date").notNull(),
+  tags: text("tags"),
   completed: integer("completed", { mode: 'boolean' }).default(false),
-  userId: text("user_id").references(() => user.id),
+  userId: text("user_id").references(() => user.id).notNull(),
   createdAt: text().default(sql`(CURRENT_TIMESTAMP)`),
   updatedAt: text()
     .notNull()
@@ -105,9 +107,27 @@ export const schedules = sqliteTable("schedules", {
     .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
 }, (table) => ({
   userDateIdx: index("user_date_idx").on(table.userId, table.date),
+  studyStartIdx: index("study_start_idx").on(table.userId, table.completed)
 }));
 
-export const subscription = sqliteTable("subscription", {
+export const studyLogs = sqliteTable(
+  "study_logs", {
+  id: text("id").primaryKey(),
+  title: text("title").notNull(),
+  subtitle: text("subtitle"),
+  startDateTime: text("start_date_time").notNull(),
+  endDateTime: text("end_date_time").notNull(),
+  date: text("date").notNull(),
+  studyHours: integer("study_hours").notNull(),
+  tags: text("tags"),
+  userId: text("user_id").references(() => user.id).notNull(),
+  createdAt: text().default(sql`(CURRENT_TIMESTAMP)`),
+}, (table) => ({
+  userDateIndex: index("user_date_index").on(table.userId, table.date),
+}))
+
+export const subscription = sqliteTable(
+  "subscription", {
   id: text("id").primaryKey(),
   plan: text("plan").notNull(),
   referenceId: text("reference_id").notNull(),
@@ -141,4 +161,12 @@ export const accountRelations = relations(account, ({ one }) => ({
   }),
 }));
 
-export const schema = { user, session, verification, account, schedules, }
+export const schema = {
+  user,
+  session,
+  verification,
+  account,
+  schedules,
+  subscription,
+  studyLogs,
+}
