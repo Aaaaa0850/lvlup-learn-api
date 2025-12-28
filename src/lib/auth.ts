@@ -1,7 +1,7 @@
 // src/lib/auth.ts
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { drizzle } from "drizzle-orm/d1";
+import { getDB } from "./db";
 import * as schema from "../../drizzle/schema";
 import { anonymous } from "better-auth/plugins";
 //import { stripe } from "@better-auth/stripe"
@@ -35,19 +35,20 @@ export const auth = betterAuth({
 
 // 実際のアプリケーション用の関数
 export const getAuth = (env: {
-  lvlup_learn: D1Database;
   BETTER_AUTH_SECRET: string;
   BETTER_AUTH_URL: string;
   //STRIPE_API_KEY: string;
   //STRIPE_WEBHOOK_SECRET: string;
   GOOGLE_CLIENT_ID: string;
   GOOGLE_CLIENT_SECRET: string;
+  TURSO_URL: string;
+  TURSO_AUTH_TOKEN: string;
 }) => {
   /*const stripeClient = new Stripe(env.STRIPE_API_KEY, {
     apiVersion: "2025-12-15.clover",
     httpClient: Stripe.createFetchHttpClient(),
   });*/
-  const db = drizzle(env.lvlup_learn, { schema });
+  const db = getDB(env);
   return betterAuth({
     database: drizzleAdapter(db, {
       provider: "sqlite",
@@ -67,6 +68,7 @@ export const getAuth = (env: {
         clientSecret: env.GOOGLE_CLIENT_SECRET,
       }
     },
+    trustedOrigins: ["http://localhost:3000"],
     secret: env.BETTER_AUTH_SECRET,
     baseURL: env.BETTER_AUTH_URL,
   });

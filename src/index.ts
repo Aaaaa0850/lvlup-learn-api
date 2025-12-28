@@ -7,13 +7,14 @@ import visualization from './visualization/visualization'
 import aiGenerateTags from './aiGenerateTags/aiGenerateTags';
 
 type Bindings = {
-  lvlup_learn: D1Database;
   BETTER_AUTH_SECRET: string;
   BETTER_AUTH_URL: string;
   //STRIPE_API_KEY: string;
   //STRIPE_WEBHOOK_SECRET: string;
   GOOGLE_CLIENT_ID: string;
   GOOGLE_CLIENT_SECRET: string;
+  TURSO_URL: string;
+  TURSO_AUTH_TOKEN: string;
 };
 
 type Variables = {
@@ -26,10 +27,13 @@ const app = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 app.use(
   "*",
   cors({
-    origin: "http://localhost:3000",
-    allowHeaders: ["Content-Type", "Authorization"],
-    allowMethods: ["POST", "GET", "OPTIONS"],
-    exposeHeaders: ["Content-Length"],
+    origin: (origin) => {
+      const allowedOrigins = ["http://localhost:3000", process.env.FRONTEND_URL].filter(Boolean);
+      return allowedOrigins.includes(origin) ? origin : "http://localhost:3000";
+    },
+    allowHeaders: ["Content-Type", "Authorization", "Cookie", "X-Requested-With"],
+    allowMethods: ["POST", "GET", "OPTIONS", "PUT", "DELETE"],
+    exposeHeaders: ["Content-Length", "Set-Cookie"],
     maxAge: 600,
     credentials: true,
   }),
