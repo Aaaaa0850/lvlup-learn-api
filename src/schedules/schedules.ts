@@ -3,10 +3,12 @@ import { type Session } from "../lib/auth";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import {
+  ScheduleId,
   ScheduleTitle,
   ScheduleSubtitle,
   ScheduleDuration,
-  color
+  color,
+  tags,
 } from "../types/schedule";
 import { schedules } from "../../drizzle/schema";
 import { nanoid } from "nanoid/non-secure";
@@ -45,18 +47,27 @@ app.post('/', zValidator(
     subtitle: ScheduleSubtitle,
     duration: ScheduleDuration,
     color: color,
+    tags: tags,
   }),
+  (result, c) => {
+    if (!result.success) {
+      console.log('Zod Validation Error:', result.error);
+      return c.json({ error: result.error }, 400);
+    }
+  }
 ), async (c) => {
   const db = getDB(c.env);
-  const user = 'e082e7fe-76b6-4069-b70c-d30b6fb19143';//c.get('user');
+  const user = c.get('user');
+  console.log(user)
   const {
     title,
     subtitle,
     duration,
-    color
+    color,
+    tags,
   } = c.req.valid("json");
   const id = nanoid();
-  const date = generateTomorrowDate()
+  const date = generateTomorrowDate();
   try {
     await db.insert(schedules).values({
       id,
@@ -65,9 +76,17 @@ app.post('/', zValidator(
       duration,
       color,
       date,
-      userId: user,//user.id,
+      tags: JSON.stringify(tags),
+      userId: user!.id,
     });
-    return c.json({ success: true }, 201);
+    return c.json({
+      id,
+      title,
+      subtitle,
+      duration,
+      color,
+      tags,
+    }, 201);
   } catch (e) {
     console.error(e);
     return c.json({ error: "スケジュールの保存に失敗しました" }, 500);
@@ -76,7 +95,7 @@ app.post('/', zValidator(
 
 app.get('/', async (c) => {
   const db = getDB(c.env);
-  const user = 'e082e7fe-76b6-4069-b70c-d30b6fb19143';//c.get('user');
+  const user = c.get('user');
   if (!user) {
     return c.json({ error: 'Unauthorized' }, 401);
   }
@@ -89,21 +108,111 @@ app.get('/', async (c) => {
         subtitle: schedules.subtitle,
         duration: schedules.duration,
         color: schedules.color,
+        tags: schedules.tags,
       }
       ).from(schedules)
         .where(
           and(
-            eq(schedules.userId, user/*user.id*/)
+            eq(schedules.userId, user.id)
             , eq(schedules.date, date)))
         .orderBy(
           desc(sql`case when ${schedules.duration} is null then 1 else 0 end`),
           asc(schedules.duration)
         );
-    return c.json(result, 200);
+    console.log(result);
+    const formattedResult = result.map(item => ({
+      ...item,
+      tags: item.tags ? (JSON.parse(item.tags as string) as string[]) : [],
+    }));
+    return c.json(formattedResult, 200);
   } catch (e) {
     console.error(e)
     return c.json({ error: 'スケジュールの取得に失敗しました' }, 500);
   }
 })
 
+app.put('/', zValidator(
+  "json",
+  z.object({
+    id: ScheduleId,
+    title: ScheduleTitle,
+    subtitle: ScheduleSubtitle,
+    duration: ScheduleDuration,
+    color: color,
+    tags: tags,
+  }), (result, c) => {
+    if (!result.success) {
+      console.log('Zod Validation Error:', result.error);
+      return c.json({ error: result.error }, 400);
+    }
+  }
+), async (c) => {
+  const db = getDB(c.env);
+  const user = c.get('user');
+  if (!user) {
+    return c.json({ error: 'Unauthorized' }, 401);
+  }
+  const {
+    id,
+    title,
+    subtitle,
+    duration,
+    color,
+    tags,
+  } = c.req.valid("json");
+  try {
+    await db.update(schedules)
+      .set(
+        {
+          title,
+          subtitle,
+          duration,
+          color,
+          tags: JSON.stringify(tags),
+        }
+      )
+      .where(
+        and(
+          eq(schedules.id, id),
+          eq(schedules.userId, user.id)
+        )
+      )
+    return c.json({
+      id,
+      title,
+      subtitle,
+      duration,
+      color,
+      tags,
+    }, 200);
+  } catch (err) {
+    return c.json({ error: 'スケジュールの更新に失敗しました。' }, 500)
+  }
+})
+
+app.delete('/', zValidator(
+  "json",
+  z.object({
+    id: ScheduleId,
+  }),
+  (result, c) => {
+    if (!result.success) {
+      console.log('Zod Validation Error:', result.error);
+      return c.json({ error: result.error }, 400);
+    }
+  }
+), async (c) => {
+  const db = getDB(c.env);
+  const user = c.get('user');
+  if (!user) {
+    return c.json({ error: 'Unauthorized' }, 401);
+  }
+  const { id } = c.req.valid("json");
+  try {
+    await db.delete(schedules).where(and(eq(schedules.id, id), eq(schedules.userId, user.id)));
+    return c.json({ message: 'スケジュールの削除に成功しました' }, 200);
+  } catch (err) {
+    return c.json({ error: 'スケジュールの削除に失敗しました' }, 500);
+  }
+});
 export default app;

@@ -9,8 +9,8 @@ import aiGenerateTags from './aiGenerateTags/aiGenerateTags';
 type Bindings = {
   BETTER_AUTH_SECRET: string;
   BETTER_AUTH_URL: string;
-  //STRIPE_API_KEY: string;
-  //STRIPE_WEBHOOK_SECRET: string;
+  STRIPE_API_KEY: string;
+  STRIPE_WEBHOOK_SECRET: string;
   GOOGLE_CLIENT_ID: string;
   GOOGLE_CLIENT_SECRET: string;
   TURSO_URL: string;
@@ -46,7 +46,12 @@ app.on(["POST", "GET"], "/api/auth/*", (c) => {
 
 app.use("/api/*", async (c, next) => {
   if (c.get("user") || c.req.method === "OPTIONS") return await next();
-
+  if (
+    c.req.path === "/api/auth/stripe/webhook" ||
+    c.req.method === "OPTIONS"
+  ) {
+    return await next();
+  }
   const auth = getAuth(c.env);
   const session = await auth.api.getSession({ headers: c.req.raw.headers });
 

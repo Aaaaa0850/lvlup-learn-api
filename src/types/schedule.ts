@@ -7,6 +7,9 @@ import { z } from "zod";
   color: z.string(),
   date: z.string(),
 });*/
+export const ScheduleId = z.string().length(21, '不正なIDです');
+export type ScheduleId = z.infer<typeof ScheduleId>
+
 export const ScheduleTitle = z.string()
   .min(1, 'タイトルを入力してください')
   .max(30, 'タイトルは30文字以内である必要があります');
@@ -25,3 +28,6 @@ export type ScheduleDuration = z.infer<typeof ScheduleDuration>;
 
 export const color = z.string();
 export type color = z.infer<typeof color>;
+
+export const tags = z.array(z.string()).max(3).optional().default([]);
+export type tags = z.infer<typeof tags>;

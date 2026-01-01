@@ -28,11 +28,14 @@ app.post('/', zValidator(
   })
 ), async (c) => {
   const { title, subtitle } = c.req.valid("json");
-  const user = 'e082e7fe-76b6-4069-b70c-d30b6b'//c.get('user');
+  const user = 'e082e7fe-76b6-4069-b70c-d30b6fb19143';//c.get('user');
+  /*if (!user) {
+    return c.json({ error: "認証が必要です" }, 401);
+  }*/
   const KV = c.env.lvlup_learn_kv;
   const LIMITS = {
     FREE: 0,
-    PRO: 5,
+    PRO: 100,
     PREMIUM: 15
   } as const;
   const WINDOW_SECONDS = 3600;
@@ -40,7 +43,7 @@ app.post('/', zValidator(
   //if (limit === 0) {
   //return c.json({ error: 'Proプラン以上でご利用いただけます' }, 403);
   //}
-  const key = `rate_limit:ai_gen:${user/*user!.id*/}`
+  const key = `rate_limit:ai_gen:${/*user.id*/'e082e7fe-76b6-4069-b70c-d30b6fb19143'}`
   const currentCount = (await KV.get<number>(key, { type: 'json' })) ?? 0;
   console.log(currentCount);
   if (currentCount >= limit) {
@@ -51,13 +54,14 @@ app.post('/', zValidator(
       messages: [
         {
           role: 'system',
-          content:
-            `content: 学習内容の分析エキスパートとして、入力内容を「ジャンル」「スキル」「目的」の観点から抽象化した日本語のタグを3つ作成し、JSON配列形式で出力してください。
-            【厳守ルール】
-            1. タイトルの単語をそのまま分割しない。
-            2. 入力が英語（AWS, IAM等）であっても、タグは必ず日本語（例：「クラウドインフラ」「権限管理」等）に翻訳・変換すること。
-            3. 出力はJSON配列のみとし、解説や挨拶は一切含めない。
-            4. 返答例：["クラウドインフラ", "セキュリティ", "AWS資格"]`
+          content: `Expert learning analyst. Create 3 abstract Japanese tags (Genre, Skill, Objective) for the input.
+          [Rules]
+          1. Never split title words directly.
+          2. Translate English terms to Japanese (e.g., "AWS" -> "クラウドインフラ").
+          3. Output ONLY a JSON array of strings. No prose.
+          4. Response language: Japanese.
+          5. Keep tech terms original (e.g. AWS, NoSQL).
+          Example: ["クラウドインフラ", "NoSQL", "AWS資格"]`
         },
         { role: 'user', content: `title: ${title}, memo: ${subtitle}` }
       ],

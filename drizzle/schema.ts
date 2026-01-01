@@ -1,5 +1,5 @@
 import { sql, relations } from "drizzle-orm";
-import { sqliteTable, text, integer, index, } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, index, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 export const user = sqliteTable("user", {
   id: text("id").primaryKey(),
@@ -107,7 +107,7 @@ export const schedules = sqliteTable(
     .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
 }, (table) => ({
   userDateIdx: index("user_date_idx").on(table.userId, table.date),
-  studyStartIdx: index("study_start_idx").on(table.userId, table.completed)
+  studyStartIdx: index("study_start_idx").on(table.userId, table.completed),
 }));
 
 export const studyLogs = sqliteTable(
@@ -127,20 +127,31 @@ export const studyLogs = sqliteTable(
 }))
 
 export const subscription = sqliteTable(
-  "subscription", {
-  id: text("id").primaryKey(),
-  plan: text("plan").notNull(),
-  referenceId: text("reference_id").notNull(),
-  stripeCustomerId: text("stripe_customer_id"),
-  stripeSubscriptionId: text("stripe_subscription_id"),
-  status: text("status").notNull(),
-  periodStart: integer("period_start", { mode: "timestamp" }),
-  periodEnd: integer("period_end", { mode: "timestamp" }),
-  cancelAtPeriodEnd: integer("cancel_at_period_end", { mode: 'boolean' }),
-  seats: integer("seats"),
-  trialStart: integer("trial_start", { mode: "timestamp" }),
-  trialEnd: integer("trial_end", { mode: "timestamp" }),
-});
+  "subscription",
+  {
+    id: text("id").primaryKey(),
+    plan: text("plan").notNull(),
+    referenceId: text("reference_id").notNull(), // user.idとの紐付け用
+    stripeCustomerId: text("stripe_customer_id"),
+    stripeSubscriptionId: text("stripe_subscription_id"),
+    status: text("status").notNull(),
+    periodStart: integer("period_start", { mode: "timestamp" }),
+    periodEnd: integer("period_end", { mode: "timestamp" }),
+    cancelAtPeriodEnd: integer("cancel_at_period_end", { mode: "boolean" }),
+    seats: integer("seats"),
+    trialStart: integer("trial_start", { mode: "timestamp" }),
+    trialEnd: integer("trial_end", { mode: "timestamp" }),
+  },
+  (table) => ({
+    referenceIdIdx: index("subscription_referenceId_idx").on(table.referenceId),
+    stripeSubscriptionIdIdx: uniqueIndex("subscription_stripeSubscriptionId_idx").on(
+      table.stripeSubscriptionId
+    ),
+    stripeCustomerIdIdx: index("subscription_stripeCustomerId_idx").on(
+      table.stripeCustomerId
+    ),
+  })
+);
 
 export const userRelations = relations(user, ({ many }) => ({
   sessions: many(session),

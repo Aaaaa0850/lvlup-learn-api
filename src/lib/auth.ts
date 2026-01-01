@@ -1,11 +1,10 @@
-// src/lib/auth.ts
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { getDB } from "./db";
 import * as schema from "../../drizzle/schema";
 import { anonymous } from "better-auth/plugins";
-//import { stripe } from "@better-auth/stripe"
-//import Stripe from "stripe"
+import { stripe } from "@better-auth/stripe"
+import Stripe from "stripe"
 
 // 開発環境用のモック設定（CLI用）
 /*const mockDb = {} as any;
@@ -37,17 +36,17 @@ export const auth = betterAuth({
 export const getAuth = (env: {
   BETTER_AUTH_SECRET: string;
   BETTER_AUTH_URL: string;
-  //STRIPE_API_KEY: string;
-  //STRIPE_WEBHOOK_SECRET: string;
+  STRIPE_API_KEY: string;
+  STRIPE_WEBHOOK_SECRET: string;
   GOOGLE_CLIENT_ID: string;
   GOOGLE_CLIENT_SECRET: string;
   TURSO_URL: string;
   TURSO_AUTH_TOKEN: string;
 }) => {
-  /*const stripeClient = new Stripe(env.STRIPE_API_KEY, {
+  const stripeClient = new Stripe(env.STRIPE_API_KEY, {
     apiVersion: "2025-12-15.clover",
     httpClient: Stripe.createFetchHttpClient(),
-  });*/
+  });
   const db = getDB(env);
   return betterAuth({
     database: drizzleAdapter(db, {
@@ -56,11 +55,12 @@ export const getAuth = (env: {
     }),
     plugins: [
       anonymous(),
-      /*stripe({
+      stripe({
         stripeClient,
         stripeWebhookSecret: env.STRIPE_WEBHOOK_SECRET,
         createCustomerOnSignUp: true,
-      }),*/
+        subscriptionTable: schema.subscription,
+      }),
     ],
     socialProviders: {
       google: {

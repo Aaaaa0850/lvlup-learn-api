@@ -12,14 +12,14 @@
     "FRONTEND_URL": "http://localhost:3000",
     "crossSubDomainCookies": "localhost",
 	},
-	"d1_databases": [
+	/*"d1_databases": [
 		{
 			"binding": "lvlup_learn",
 			"database_name": "lvlup-learn",
 			"database_id": "dd39676c-f075-4435-9ee0-03158e1c7a85",
 			"remote": true
 		}
-	],
+	],*/
 	"kv_namespaces": [
 		{
 			"binding": "lvlup_learn_kv",
