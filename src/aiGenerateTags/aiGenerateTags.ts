@@ -6,9 +6,13 @@ import {
   ScheduleTitle,
   ScheduleSubtitle
 } from '../types/schedule'
+import { getDB } from "../lib/db";
+import { eq } from "drizzle-orm";
+import { subscription } from "../../drizzle/schema";
 
 type Bindings = {
-  lvlup_learn: D1Database;
+  TURSO_URL: string;
+  TURSO_AUTH_TOKEN: string;
   lvlup_learn_kv: KVNamespace;
   AI: Ai;
 };
@@ -28,22 +32,25 @@ app.post('/', zValidator(
   })
 ), async (c) => {
   const { title, subtitle } = c.req.valid("json");
-  const user = 'e082e7fe-76b6-4069-b70c-d30b6fb19143';//c.get('user');
-  /*if (!user) {
+  const user = c.get('user');
+  if (!user) {
     return c.json({ error: "認証が必要です" }, 401);
+  }
+  /*if (user.isAnonymous) {
+    return c.json({ error: "AIタグ生成機能はアカウント登録後にご利用いただけます。" }, 403);
   }*/
+  const db = getDB(c.env);
+  const plan = await db.select({ plan: subscription.plan }).from(subscription).where(eq(subscription.referenceId, user.id)).limit(1).then(result => result[0]?.plan ?? 'FREE');
+  console.log(plan);
   const KV = c.env.lvlup_learn_kv;
   const LIMITS = {
-    FREE: 0,
-    PRO: 100,
-    PREMIUM: 15
+    FREE: 10,
+    PRO: 50,
+    PREMIUM: 100
   } as const;
   const WINDOW_SECONDS = 3600;
   const limit = LIMITS['PRO'];
-  //if (limit === 0) {
-  //return c.json({ error: 'Proプラン以上でご利用いただけます' }, 403);
-  //}
-  const key = `rate_limit:ai_gen:${/*user.id*/'e082e7fe-76b6-4069-b70c-d30b6fb19143'}`
+  const key = `rate_limit:ai_gen:${user.id}`
   const currentCount = (await KV.get<number>(key, { type: 'json' })) ?? 0;
   console.log(currentCount);
   if (currentCount >= limit) {
@@ -63,7 +70,7 @@ app.post('/', zValidator(
           5. Keep tech terms original (e.g. AWS, NoSQL).
           Example: ["クラウドインフラ", "NoSQL", "AWS資格"]`
         },
-        { role: 'user', content: `title: ${title}, memo: ${subtitle}` }
+        { role: 'user', content: `T: ${title}, M: ${subtitle}` }
       ],
       temperature: 0.2,
     });

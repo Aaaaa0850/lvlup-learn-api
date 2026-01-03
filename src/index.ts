@@ -13,6 +13,10 @@ type Bindings = {
   STRIPE_WEBHOOK_SECRET: string;
   GOOGLE_CLIENT_ID: string;
   GOOGLE_CLIENT_SECRET: string;
+  GITHUB_CLIENT_ID: string;
+  GITHUB_CLIENT_SECRET: string;
+  DISCORD_CLIENT_ID: string;
+  DISCORD_CLIENT_SECRET: string;
   TURSO_URL: string;
   TURSO_AUTH_TOKEN: string;
 };
@@ -57,10 +61,11 @@ app.use("/api/*", async (c, next) => {
 
   c.set("user", session?.user ?? null);
   c.set("session", session?.session ?? null);
-  const user = 'e082e7fe-76b6-4069-b70c-d30b6fb19143';//c.get('user');
+  const user = c.get('user');
   if (!user) {
     return c.json({ error: 'Unauthorized' }, 401);
   }
+
   await next();
 });
 

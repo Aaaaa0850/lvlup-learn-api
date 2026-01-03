@@ -2,7 +2,8 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { getDB } from "./db";
 import * as schema from "../../drizzle/schema";
-import { anonymous } from "better-auth/plugins";
+//import { anonymous } from "better-auth/plugins";
+import { lastLoginMethod } from "better-auth/plugins";
 import { stripe } from "@better-auth/stripe"
 import Stripe from "stripe"
 
@@ -40,6 +41,10 @@ export const getAuth = (env: {
   STRIPE_WEBHOOK_SECRET: string;
   GOOGLE_CLIENT_ID: string;
   GOOGLE_CLIENT_SECRET: string;
+  GITHUB_CLIENT_ID: string;
+  GITHUB_CLIENT_SECRET: string;
+  DISCORD_CLIENT_ID: string;
+  DISCORD_CLIENT_SECRET: string;
   TURSO_URL: string;
   TURSO_AUTH_TOKEN: string;
 }) => {
@@ -54,18 +59,27 @@ export const getAuth = (env: {
       schema: schema,
     }),
     plugins: [
-      anonymous(),
+      //anonymous(),
       stripe({
         stripeClient,
         stripeWebhookSecret: env.STRIPE_WEBHOOK_SECRET,
         createCustomerOnSignUp: true,
         subscriptionTable: schema.subscription,
       }),
+      lastLoginMethod(),
     ],
     socialProviders: {
       google: {
         clientId: env.GOOGLE_CLIENT_ID,
         clientSecret: env.GOOGLE_CLIENT_SECRET,
+      },
+      github: {
+        clientId: env.GITHUB_CLIENT_ID,
+        clientSecret: env.GITHUB_CLIENT_SECRET
+      },
+      discord: {
+        clientId: env.DISCORD_CLIENT_ID,
+        clientSecret: env.DISCORD_CLIENT_SECRET
       }
     },
     trustedOrigins: ["http://localhost:3000"],
