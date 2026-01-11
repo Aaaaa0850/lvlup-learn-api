@@ -1,5 +1,5 @@
-import { sql, relations } from "drizzle-orm";
-import { sqliteTable, text, integer, index, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { relations, sql } from "drizzle-orm";
+import { sqliteTable, text, integer, index } from "drizzle-orm/sqlite-core";
 
 export const user = sqliteTable("user", {
   id: text("id").primaryKey(),
@@ -18,9 +18,7 @@ export const user = sqliteTable("user", {
     .notNull(),
   isAnonymous: integer("is_anonymous", { mode: "boolean" }).default(false),
   stripeCustomerId: text("stripe_customer_id"),
-},
-  (table) => [index("user_email_idx").on(table.email)]
-);
+});
 
 export const session = sqliteTable(
   "session",
@@ -40,7 +38,7 @@ export const session = sqliteTable(
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
   },
-  (table) => [index("session_userId_idx").on(table.userId, table.token)],
+  (table) => [index("session_userId_idx").on(table.userId)],
 );
 
 export const account = sqliteTable(
@@ -91,70 +89,6 @@ export const verification = sqliteTable(
   (table) => [index("verification_identifier_idx").on(table.identifier)],
 );
 
-export const schedules = sqliteTable(
-  "schedules", {
-  id: text("id").primaryKey(),
-  title: text("title"),
-  subtitle: text("subtitle"),
-  duration: integer("duration"),
-  color: text("color"),
-  date: text("date").notNull(),
-  tags: text("tags"),
-  completed: integer("completed", { mode: 'boolean' }).default(false),
-  userId: text("user_id").references(() => user.id).notNull(),
-  createdAt: text().default(sql`(CURRENT_TIMESTAMP)`),
-  updatedAt: text()
-    .notNull()
-    .default(sql`(CURRENT_TIMESTAMP)`)
-    .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
-}, (table) => ({
-  userDateIdx: index("user_date_idx").on(table.userId, table.date),
-  studyStartIdx: index("study_start_idx").on(table.userId, table.completed),
-}));
-
-export const studyAchievements = sqliteTable(
-  "study_stats", {
-  id: text("id").primaryKey(),
-  title: text("title").notNull(),
-  subtitle: text("subtitle"),
-  startDateTime: text("start_date_time").notNull(),
-  endDateTime: text("end_date_time").notNull(),
-  date: text("date").notNull(),
-  studyHours: integer("study_hours").notNull(),
-  tags: text("tags"),
-  userId: text("user_id").references(() => user.id).notNull(),
-  createdAt: text().default(sql`(CURRENT_TIMESTAMP)`),
-}, (table) => ({
-  userDateIndex: index("user_date_index").on(table.userId, table.date),
-}))
-
-export const subscription = sqliteTable(
-  "subscription",
-  {
-    id: text("id").primaryKey(),
-    plan: text("plan").notNull(),
-    referenceId: text("reference_id").notNull(), // user.idとの紐付け用
-    stripeCustomerId: text("stripe_customer_id"),
-    stripeSubscriptionId: text("stripe_subscription_id"),
-    status: text("status").notNull(),
-    periodStart: integer("period_start", { mode: "timestamp" }),
-    periodEnd: integer("period_end", { mode: "timestamp" }),
-    cancelAtPeriodEnd: integer("cancel_at_period_end", { mode: "boolean" }),
-    seats: integer("seats"),
-    trialStart: integer("trial_start", { mode: "timestamp" }),
-    trialEnd: integer("trial_end", { mode: "timestamp" }),
-  },
-  (table) => ({
-    referenceIdIdx: index("subscription_referenceId_idx").on(table.referenceId),
-    stripeSubscriptionIdIdx: uniqueIndex("subscription_stripeSubscriptionId_idx").on(
-      table.stripeSubscriptionId
-    ),
-    stripeCustomerIdIdx: index("subscription_stripeCustomerId_idx").on(
-      table.stripeCustomerId
-    ),
-  })
-);
-
 export const userRelations = relations(user, ({ many }) => ({
   sessions: many(session),
   accounts: many(account),
@@ -173,13 +107,3 @@ export const accountRelations = relations(account, ({ one }) => ({
     references: [user.id],
   }),
 }));
-
-export const schema = {
-  user,
-  session,
-  verification,
-  account,
-  schedules,
-  subscription,
-  studyAchievements,
-}

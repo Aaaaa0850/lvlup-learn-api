@@ -1,45 +1,80 @@
 import { Hono } from 'hono'
-import { Auth, WorkersKVStoreSingle, ServiceAccountCredential } from 'firebase-auth-cloudflare-workers';
-import type { UserRecord } from 'firebase-auth-cloudflare-workers/dist/main/user-record';
-import * as credentials from '../lvlup-learn-firebase-adminsdk-fbsvc-7b90f9fa3c.json';
-import type { Context, Next } from 'hono';
+import { cors } from 'hono/cors';
+import { getAuth, type Session } from './lib/auth';
+import schedules from './schedules/schedules'
+import studyLogs from './achievements/achievements';
+import visualization from './stats/stats'
+import aiGenerateTags from './aiGenerateTags/aiGenerateTags';
+import studySchedules from './studySchedules/studySchedules'
+
+type Bindings = {
+  BETTER_AUTH_SECRET: string;
+  BETTER_AUTH_URL: string;
+  STRIPE_API_KEY: string;
+  STRIPE_WEBHOOK_SECRET: string;
+  GOOGLE_CLIENT_ID: string;
+  GOOGLE_CLIENT_SECRET: string;
+  GITHUB_CLIENT_ID: string;
+  GITHUB_CLIENT_SECRET: string;
+  DISCORD_CLIENT_ID: string;
+  DISCORD_CLIENT_SECRET: string;
+  TURSO_URL: string;
+  TURSO_AUTH_TOKEN: string;
+};
 
 type Variables = {
-  user?: UserRecord;
+  user: Session["user"] | null;
+  session: Session["session"] | null;
 }
 
-const app = new Hono<{ Bindings: Cloudflare.Env, Variables: Variables }>()
+const app = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
-app.use(async (c, next) => {
-  const kvStoreAuth = WorkersKVStoreSingle.getOrInitialize(
-    c.env.PUBLIC_JWT_CACHE_KEY,
-    c.env.lvlup_learn_kv
-  );
+app.use(
+  "*",
+  cors({
+    origin: (origin) => {
+      const allowedOrigins = ["http://localhost:3000", process.env.FRONTEND_URL].filter(Boolean);
+      return allowedOrigins.includes(origin) ? origin : "http://localhost:3000";
+    },
+    allowHeaders: ["Content-Type", "Authorization", "Cookie", "X-Requested-With"],
+    allowMethods: ["POST", "GET", "OPTIONS", "PUT", "DELETE"],
+    exposeHeaders: ["Content-Length", "Set-Cookie"],
+    maxAge: 600,
+    credentials: true,
+  }),
+);
 
-  const auth = Auth.getOrInitialize(
-    credentials.project_id,
-    kvStoreAuth,
-    new ServiceAccountCredential(JSON.stringify(credentials))
-  );
+app.on(["POST", "GET"], "/api/auth/*", (c) => {
+  const auth = getAuth(c.env);
+  return auth.handler(c.req.raw);
+});
 
-  const authz = c.req.header('Authorization');
-  if (authz) {
-    const idToken = authz.replace(/^Bearer\s+/i, '');
-    try {
-      const { uid } = await auth.verifyIdToken(idToken);
-      const user = await auth.getUser(uid);
-      c.set('user', user);
-    } catch (err) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
+app.use("/api/*", async (c, next) => {
+  if (c.get("user") || c.req.method === "OPTIONS") return await next();
+  if (
+    c.req.path === "/api/auth/stripe/webhook" ||
+    c.req.method === "OPTIONS"
+  ) {
+    return await next();
+  }
+  const auth = getAuth(c.env);
+  const session = await auth.api.getSession({ headers: c.req.raw.headers });
+
+  c.set("user", session?.user ?? null);
+  c.set("session", session?.session ?? null);
+  const user = c.get('user');
+  console.log(user)
+  if (!user) {
+    return c.json({ error: 'Unauthorized' }, 401);
   }
 
   await next();
 });
 
-const mustAuth = async (c: Context, next: Next) => {
-  if (!c.get('user')) return c.json({ error: 'Unauthorized' }, 401);
-  await next();
-};
+app.route('/api/schedules', schedules);
+app.route('/api/study-logs', studyLogs);
+app.route('/api/visualization', visualization)
+app.route('/api/ai-generate-tags', aiGenerateTags);
+app.route('api/study-schedules', studySchedules);
 
-export default app
+export default app;
