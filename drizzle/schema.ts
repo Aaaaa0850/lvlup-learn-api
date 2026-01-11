@@ -1,6 +1,5 @@
 import { sql, relations } from "drizzle-orm";
 import { sqliteTable, text, integer, index, uniqueIndex } from "drizzle-orm/sqlite-core";
-import { table } from "node:console";
 
 export const user = sqliteTable("user", {
   id: text("id").primaryKey(),
@@ -113,7 +112,7 @@ export const schedules = sqliteTable(
   studyStartIdx: index("study_start_idx").on(table.userId, table.completed),
 }));
 
-export const studyStats = sqliteTable(
+export const studyAchievements = sqliteTable(
   "study_stats", {
   id: text("id").primaryKey(),
   title: text("title").notNull(),
@@ -182,5 +181,5 @@ export const schema = {
   account,
   schedules,
   subscription,
-  studyStats,
+  studyAchievements,
 }

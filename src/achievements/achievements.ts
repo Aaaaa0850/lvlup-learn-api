@@ -12,7 +12,7 @@ import {
   studyHours,
   date,
 } from '../types/studyLogs';
-import { studyLogs } from '../../drizzle/schema';
+import { studyAchievements } from '../../drizzle/schema';
 
 type Bindings = {
   TURSO_URL: string;
@@ -49,7 +49,7 @@ app.post('/', zValidator(
   } = c.req.valid("json");
   const id = nanoid();
   try {
-    await db.insert(studyLogs).values({
+    await db.insert(studyAchievements).values({
       id,
       title,
       subtitle,

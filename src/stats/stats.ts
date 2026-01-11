@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { getDB } from "../lib/db";
 import { type Session } from "../lib/auth";
-import { studyLogs } from "../../drizzle/schema";
+import { studyAchievements } from "../../drizzle/schema";
 import {
   eq,
   and,
@@ -26,22 +26,22 @@ app.get('/:date', async (c) => {
   const date = c.req.param('date');
   try {
     const result = await db.select({
-      title: studyLogs.title,
-      subtitle: studyLogs.subtitle,
-      startDateTime: studyLogs.startDateTime,
-      endDateTime: studyLogs.endDateTime,
-      studyHours: studyLogs.studyHours,
-      tags: studyLogs.tags
+      title: studyAchievements.title,
+      subtitle: studyAchievements.subtitle,
+      startDateTime: studyAchievements.startDateTime,
+      endDateTime: studyAchievements.endDateTime,
+      studyHours: studyAchievements.studyHours,
+      tags: studyAchievements.tags
     })
-      .from(studyLogs)
+      .from(studyAchievements)
       .where(
         and(
-          eq(studyLogs.userId, user!.id),
-          eq(studyLogs.date, date)
+          eq(studyAchievements.userId, user!.id),
+          eq(studyAchievements.date, date)
         )
       )
       .orderBy(
-        asc(studyLogs.startDateTime)
+        asc(studyAchievements.startDateTime)
       );
     return c.json(result, 200);
   } catch (e) {
