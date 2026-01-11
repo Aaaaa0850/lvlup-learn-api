@@ -57,7 +57,7 @@ export const getAuth = (env: {
     session: {
       cookieCache: {
         enabled: true,
-        maxAge: 3 * 60,
+        maxAge: 2 * 60,
         strategy: "compact"
       }
     },

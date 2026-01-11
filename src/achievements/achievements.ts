@@ -10,8 +10,9 @@ import {
   startDateTime,
   endDateTime,
   studyHours,
+  tags,
   date,
-} from '../types/studyLogs';
+} from '../types/achievements';
 import { studyAchievements } from '../../drizzle/schema';
 
 type Bindings = {
@@ -34,17 +35,19 @@ app.post('/', zValidator(
     startDateTime: startDateTime,
     endDateTime: endDateTime,
     date: date,
+    tags: tags,
     studyHours: studyHours,
   }),
 ), async (c) => {
   const db = getDB(c.env);
-  const user = 'e082e7fe-76b6-4069-b70c-d30b6fb19143';//c.get('user');
+  const user = c.get('user');
   const {
     title,
     subtitle,
     startDateTime,
     endDateTime,
     date,
+    tags,
     studyHours
   } = c.req.valid("json");
   const id = nanoid();
@@ -57,7 +60,8 @@ app.post('/', zValidator(
       endDateTime,
       date,
       studyHours,
-      userId: user
+      tags: JSON.stringify(tags),
+      userId: user!.id
     });
 
     return c.json({}, 200);

@@ -1,9 +1,10 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors';
+import { csrf } from 'hono/csrf';
 import { getAuth, type Session } from './lib/auth';
 import schedules from './schedules/schedules'
-import studyLogs from './achievements/achievements';
-import visualization from './stats/stats'
+import achievements from './achievements/achievements';
+import stats from './stats/stats'
 import aiGenerateTags from './aiGenerateTags/aiGenerateTags';
 import studySchedules from './studySchedules/studySchedules'
 
@@ -44,6 +45,15 @@ app.use(
   }),
 );
 
+app.use(
+  csrf({
+    origin: [
+      'http://localhost:3000',
+      'https://lvlup-learn.com',
+    ],
+  })
+)
+
 app.on(["POST", "GET"], "/api/auth/*", (c) => {
   const auth = getAuth(c.env);
   return auth.handler(c.req.raw);
@@ -72,8 +82,8 @@ app.use("/api/*", async (c, next) => {
 });
 
 app.route('/api/schedules', schedules);
-app.route('/api/study-logs', studyLogs);
-app.route('/api/visualization', visualization)
+app.route('/api/achievements', achievements);
+app.route('/api/stats', stats)
 app.route('/api/ai-generate-tags', aiGenerateTags);
 app.route('api/study-schedules', studySchedules);
 

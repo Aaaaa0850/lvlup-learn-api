@@ -5,4 +5,5 @@ export const studyLogsSubtitle = z.string().optional();
 export const startDateTime = z.string();
 export const endDateTime = z.string();
 export const date = z.string();
+export const tags = z.array(z.string()).max(3).optional().default([]);
 export const studyHours = z.number().min(0).max(1440);

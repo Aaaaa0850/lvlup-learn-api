@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { getDB } from "../lib/db";
 import { type Session } from "../lib/auth";
-import { studyAchievements } from "../../drizzle/schema";
+import { studyAchievements, subscription } from "../../drizzle/schema";
 import {
   eq,
   and,
@@ -20,6 +20,24 @@ type Variables = {
 
 const app = new Hono<{ Bindings: Bindings, Variables: Variables }>();
 
+app.get('/', async (c) => {
+  const db = getDB(c.env);
+  const user = c.get('user');
+  try {
+    const result = await db.select({
+      id: studyAchievements.id,
+      studyHours: studyAchievements.studyHours,
+      startDateTime: studyAchievements.startDateTime
+    }).from(studyAchievements)
+      .where(eq(studyAchievements.userId, user!.id))
+      .orderBy(asc(studyAchievements.startDateTime))
+      .limit(500);
+    return c.json(result, 200);
+  } catch (e) {
+    return c.json({ error: "実績の取得に失敗しました" }, 500);
+  }
+})
+
 app.get('/:date', async (c) => {
   const db = getDB(c.env);
   const user = c.get('user');
@@ -32,8 +50,7 @@ app.get('/:date', async (c) => {
       endDateTime: studyAchievements.endDateTime,
       studyHours: studyAchievements.studyHours,
       tags: studyAchievements.tags
-    })
-      .from(studyAchievements)
+    }).from(studyAchievements)
       .where(
         and(
           eq(studyAchievements.userId, user!.id),
