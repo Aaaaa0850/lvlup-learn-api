@@ -1,4 +1,4 @@
-import { betterAuth } from "better-auth";
+import { betterAuth } from "better-auth/minimal";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { getDB } from "./db";
 import * as schema from "../../drizzle/schema";
@@ -54,6 +54,13 @@ export const getAuth = (env: {
   });
   const db = getDB(env);
   return betterAuth({
+    session: {
+      cookieCache: {
+        enabled: true,
+        maxAge: 3 * 60,
+        strategy: "compact"
+      }
+    },
     database: drizzleAdapter(db, {
       provider: "sqlite",
       schema: schema,

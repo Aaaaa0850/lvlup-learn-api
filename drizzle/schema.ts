@@ -1,5 +1,6 @@
 import { sql, relations } from "drizzle-orm";
 import { sqliteTable, text, integer, index, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { table } from "node:console";
 
 export const user = sqliteTable("user", {
   id: text("id").primaryKey(),
@@ -18,7 +19,9 @@ export const user = sqliteTable("user", {
     .notNull(),
   isAnonymous: integer("is_anonymous", { mode: "boolean" }).default(false),
   stripeCustomerId: text("stripe_customer_id"),
-});
+},
+  (table) => [index("user_email_idx").on(table.email)]
+);
 
 export const session = sqliteTable(
   "session",
@@ -38,7 +41,7 @@ export const session = sqliteTable(
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
   },
-  (table) => [index("session_userId_idx").on(table.userId)],
+  (table) => [index("session_userId_idx").on(table.userId, table.token)],
 );
 
 export const account = sqliteTable(
@@ -110,8 +113,8 @@ export const schedules = sqliteTable(
   studyStartIdx: index("study_start_idx").on(table.userId, table.completed),
 }));
 
-export const studyLogs = sqliteTable(
-  "study_logs", {
+export const studyStats = sqliteTable(
+  "study_stats", {
   id: text("id").primaryKey(),
   title: text("title").notNull(),
   subtitle: text("subtitle"),
@@ -179,5 +182,5 @@ export const schema = {
   account,
   schedules,
   subscription,
-  studyLogs,
+  studyStats,
 }

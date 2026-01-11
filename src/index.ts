@@ -5,6 +5,7 @@ import schedules from './schedules/schedules'
 import studyLogs from './studylogs/studylogs';
 import visualization from './visualization/visualization'
 import aiGenerateTags from './aiGenerateTags/aiGenerateTags';
+import studySchedules from './studySchedules/studySchedules'
 
 type Bindings = {
   BETTER_AUTH_SECRET: string;
@@ -62,6 +63,7 @@ app.use("/api/*", async (c, next) => {
   c.set("user", session?.user ?? null);
   c.set("session", session?.session ?? null);
   const user = c.get('user');
+  console.log(user)
   if (!user) {
     return c.json({ error: 'Unauthorized' }, 401);
   }
@@ -73,5 +75,6 @@ app.route('/api/schedules', schedules);
 app.route('/api/study-logs', studyLogs);
 app.route('/api/visualization', visualization)
 app.route('/api/ai-generate-tags', aiGenerateTags);
+app.route('api/study-schedules', studySchedules);
 
 export default app;
