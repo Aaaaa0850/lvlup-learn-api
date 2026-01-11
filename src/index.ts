@@ -2,8 +2,8 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors';
 import { getAuth, type Session } from './lib/auth';
 import schedules from './schedules/schedules'
-import studyLogs from './studylogs/studylogs';
-import visualization from './visualization/visualization'
+import studyLogs from './achievements/achievements';
+import visualization from './stats/stats'
 import aiGenerateTags from './aiGenerateTags/aiGenerateTags';
 import studySchedules from './studySchedules/studySchedules'
 
