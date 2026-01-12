@@ -1,3 +1,4 @@
+import { Redis } from '@upstash/redis'
 import { betterAuth } from "better-auth/minimal";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { getDB } from "./db";
@@ -54,6 +55,19 @@ export const getAuth = (env: {
   });
   const db = getDB(env);
   return betterAuth({
+    rateLimit: {
+      enabled: true,
+      window: 60,
+      max: 100,
+      storage: "database",
+      modelName: "rateLimit",
+      customRules: {
+        "/api/study-schedules": {
+          window: 60,
+          max: 10,
+        },
+      },
+    },
     session: {
       cookieCache: {
         enabled: true,

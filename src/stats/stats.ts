@@ -20,7 +20,7 @@ type Variables = {
 
 const app = new Hono<{ Bindings: Bindings, Variables: Variables }>();
 
-app.get('/', async (c) => {
+app.get('/summary', async (c) => {
   const db = getDB(c.env);
   const user = c.get('user');
   try {

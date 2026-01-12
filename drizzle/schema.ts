@@ -91,6 +91,17 @@ export const verification = sqliteTable(
   (table) => [index("verification_identifier_idx").on(table.identifier)],
 );
 
+export const rateLimit = sqliteTable(
+  "rateLimit",
+  {
+    id: text("id").primaryKey(),
+    key: text("key"),
+    count: integer("count"),
+    lastRequest: integer("lastRequest")
+  }, (table) => [index("rateLimit_key_idx").on(table.key)]
+
+)
+
 export const schedules = sqliteTable(
   "schedules", {
   id: text("id").primaryKey(),

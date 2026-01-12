@@ -38,7 +38,7 @@ app.use(
       return allowedOrigins.includes(origin) ? origin : "http://localhost:3000";
     },
     allowHeaders: ["Content-Type", "Authorization", "Cookie", "X-Requested-With"],
-    allowMethods: ["POST", "GET", "OPTIONS", "PUT", "DELETE"],
+    allowMethods: ["POST", "GET", "PUT", "DELETE"],
     exposeHeaders: ["Content-Length", "Set-Cookie"],
     maxAge: 600,
     credentials: true,

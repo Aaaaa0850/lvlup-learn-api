@@ -21,7 +21,7 @@ export const ScheduleSubtitle = z.string()
 export type ScheduleSubtitle = z.infer<typeof ScheduleSubtitle>;
 
 export const ScheduleDuration = z.number()
-  .min(1, '一分以上で入力する必要があります')
+  .min(0, '0分以上で入力する必要があります')
   .max(1440, '24時間以内で入力する必要があります')
   .optional();
 export type ScheduleDuration = z.infer<typeof ScheduleDuration>;
