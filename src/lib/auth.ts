@@ -48,37 +48,63 @@ export const getAuth = (env: {
   DISCORD_CLIENT_SECRET: string;
   TURSO_URL: string;
   TURSO_AUTH_TOKEN: string;
+  UPSTASH_REDIS_REST_URL: string;
+  UPSTASH_REDIS_REST_TOKEN: string;
 }) => {
   const stripeClient = new Stripe(env.STRIPE_API_KEY, {
     apiVersion: "2025-12-15.clover",
     httpClient: Stripe.createFetchHttpClient(),
   });
+  const redis = new Redis({
+    url: env.UPSTASH_REDIS_REST_URL,
+    token: env.UPSTASH_REDIS_REST_TOKEN
+  });
   const db = getDB(env);
   return betterAuth({
+    secondaryStorage: {
+      get: async (key) => {
+        return await redis.get(key);
+      },
+      set: async (key, value, ttl) => {
+        if (ttl) await redis.set(key, value, { ex: ttl });
+        else await redis.set(key, value);
+      },
+      delete: async (key) => {
+        await redis.del(key);
+      }
+    },
     rateLimit: {
       enabled: true,
       window: 60,
       max: 100,
-      storage: "database",
-      modelName: "rateLimit",
+      storage: "secondary-storage",
       customRules: {
         "/api/study-schedules": {
           window: 60,
-          max: 10,
+          max: 5,
+        },
+        "/api/schedules": {
+          window: 60,
+          max: 20,
         },
       },
-    },
-    session: {
-      cookieCache: {
-        enabled: true,
-        maxAge: 2 * 60,
-        strategy: "compact"
-      }
     },
     database: drizzleAdapter(db, {
       provider: "sqlite",
       schema: schema,
     }),
+    session: {
+      expiresIn: 7 * 24 * 60 * 60,
+      cookieCache: {
+        enabled: true,
+        maxAge: 7 * 24 * 60 * 60,
+        strategy: "jwe"
+      },
+      storeSessionInDatabase: false,
+    },
+    account: {
+      storeAccountCookie: true,
+    },
     plugins: [
       //anonymous(),
       stripe({

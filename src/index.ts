@@ -21,6 +21,8 @@ type Bindings = {
   DISCORD_CLIENT_SECRET: string;
   TURSO_URL: string;
   TURSO_AUTH_TOKEN: string;
+  UPSTASH_REDIS_REST_URL: string;
+  UPSTASH_REDIS_REST_TOKEN: string;
 };
 
 type Variables = {
