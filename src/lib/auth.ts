@@ -1,3 +1,4 @@
+import { Redis } from '@upstash/redis'
 import { betterAuth } from "better-auth/minimal";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { getDB } from "./db";
@@ -47,24 +48,58 @@ export const getAuth = (env: {
   DISCORD_CLIENT_SECRET: string;
   TURSO_URL: string;
   TURSO_AUTH_TOKEN: string;
+  UPSTASH_REDIS_REST_URL: string;
+  UPSTASH_REDIS_REST_TOKEN: string;
 }) => {
   const stripeClient = new Stripe(env.STRIPE_API_KEY, {
     apiVersion: "2025-12-15.clover",
     httpClient: Stripe.createFetchHttpClient(),
   });
+  const redis = new Redis({
+    url: env.UPSTASH_REDIS_REST_URL,
+    token: env.UPSTASH_REDIS_REST_TOKEN
+  });
   const db = getDB(env);
   return betterAuth({
-    session: {
-      cookieCache: {
-        enabled: true,
-        maxAge: 3 * 60,
-        strategy: "compact"
-      }
+    rateLimit: {
+      enabled: true,
+      window: 60,
+      max: 100,
+      customStorage: {
+        get: async (key: string) => {
+          const data = await redis.get(key);
+          return data as { key: string; count: number; lastRequest: number } | undefined;
+        },
+        set: async (key: string, value: { key: string; count: number; lastRequest: number }, ttl?: number) => {
+          if (ttl) {
+            await redis.set(key, value, { ex: ttl });
+          } else {
+            const tt = 61;
+            await redis.set(key, value, { ex: tt });
+          }
+        },
+        delete: async (key: string) => {
+          await redis.del(key);
+        },
+      },
+      customRules: {
+        "/api/study-schedules": { window: 60, max: 10 },
+        "/api/schedules": { window: 60, max: 20 },
+      },
     },
     database: drizzleAdapter(db, {
       provider: "sqlite",
       schema: schema,
     }),
+    session: {
+      cookieCache: {
+        enabled: true,
+        maxAge: 24 * 60 * 60,
+        strategy: "compact",
+        refreshCache: true,
+      },
+      storeSessionInDatabase: false,
+    },
     plugins: [
       //anonymous(),
       stripe({

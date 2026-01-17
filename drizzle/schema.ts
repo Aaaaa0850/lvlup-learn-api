@@ -91,6 +91,17 @@ export const verification = sqliteTable(
   (table) => [index("verification_identifier_idx").on(table.identifier)],
 );
 
+export const rateLimit = sqliteTable(
+  "rateLimit",
+  {
+    id: text("id").primaryKey(),
+    key: text("key"),
+    count: integer("count"),
+    lastRequest: integer("lastRequest")
+  }, (table) => [index("rateLimit_key_idx").on(table.key)]
+
+)
+
 export const schedules = sqliteTable(
   "schedules", {
   id: text("id").primaryKey(),
@@ -120,7 +131,7 @@ export const studyAchievements = sqliteTable(
   startDateTime: text("start_date_time").notNull(),
   endDateTime: text("end_date_time").notNull(),
   date: text("date").notNull(),
-  studyHours: integer("study_hours").notNull(),
+  studyMinutes: integer("study_minutes").notNull(),
   tags: text("tags"),
   userId: text("user_id").references(() => user.id).notNull(),
   createdAt: text().default(sql`(CURRENT_TIMESTAMP)`),

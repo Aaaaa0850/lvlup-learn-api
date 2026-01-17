@@ -9,10 +9,12 @@ import {
   studyLogsSubtitle,
   startDateTime,
   endDateTime,
-  studyHours,
+  studyMinutes,
+  tags,
   date,
-} from '../types/studyLogs';
-import { studyAchievements } from '../../drizzle/schema';
+} from '../types/achievements';
+import { studyAchievements, schedules } from '../../drizzle/schema';
+import { eq, and } from 'drizzle-orm'
 
 type Bindings = {
   TURSO_URL: string;
@@ -26,45 +28,47 @@ type Variables = {
 
 const app = new Hono<{ Bindings: Bindings, Variables: Variables }>();
 
-app.post('/', zValidator(
-  "json",
-  z.object({
-    title: studyLogsTitle,
-    subtitle: studyLogsSubtitle,
-    startDateTime: startDateTime,
-    endDateTime: endDateTime,
-    date: date,
-    studyHours: studyHours,
-  }),
-), async (c) => {
+const schema = z.object({
+  scheduleId: z.string().length(21).optional(),
+  title: studyLogsTitle,
+  subtitle: studyLogsSubtitle,
+  startDateTime: startDateTime,
+  endDateTime: endDateTime,
+  date: date,
+  tags: tags,
+  studyMinutes: studyMinutes,
+});
+
+app.post('/', zValidator("json", schema), async (c) => {
   const db = getDB(c.env);
-  const user = 'e082e7fe-76b6-4069-b70c-d30b6fb19143';//c.get('user');
-  const {
-    title,
-    subtitle,
-    startDateTime,
-    endDateTime,
-    date,
-    studyHours
-  } = c.req.valid("json");
-  const id = nanoid();
+  const user = c.get('user')!;
+  const { scheduleId, ...data } = c.req.valid("json");
+  const achievementId = nanoid();
+
   try {
-    await db.insert(studyAchievements).values({
-      id,
-      title,
-      subtitle,
-      startDateTime,
-      endDateTime,
-      date,
-      studyHours,
-      userId: user
+    await db.transaction(async (tx) => {
+      await tx.insert(studyAchievements).values({
+        id: achievementId,
+        ...data,
+        tags: JSON.stringify(data.tags),
+        userId: user.id
+      });
+
+      if (scheduleId) {
+        await tx.update(schedules)
+          .set({ completed: true })
+          .where(and(
+            eq(schedules.id, scheduleId),
+            eq(schedules.userId, user.id)
+          ));
+      }
     });
 
-    return c.json({}, 200);
+    return c.json({ success: true, id: achievementId }, 201);
   } catch (e) {
-    console.error(e);
-    return c.json({}, 500)
+    console.error("Failed to save study achievement:", e);
+    return c.json({ error: "Internal Server Error" }, 500);
   }
-})
+});
 
 export default app;

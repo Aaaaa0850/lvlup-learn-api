@@ -1,9 +1,10 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors';
+import { csrf } from 'hono/csrf';
 import { getAuth, type Session } from './lib/auth';
 import schedules from './schedules/schedules'
-import studyLogs from './achievements/achievements';
-import visualization from './stats/stats'
+import achievements from './achievements/achievements';
+import stats from './stats/stats'
 import aiGenerateTags from './aiGenerateTags/aiGenerateTags';
 import studySchedules from './studySchedules/studySchedules'
 
@@ -20,6 +21,8 @@ type Bindings = {
   DISCORD_CLIENT_SECRET: string;
   TURSO_URL: string;
   TURSO_AUTH_TOKEN: string;
+  UPSTASH_REDIS_REST_URL: string;
+  UPSTASH_REDIS_REST_TOKEN: string;
 };
 
 type Variables = {
@@ -32,49 +35,49 @@ const app = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 app.use(
   "*",
   cors({
-    origin: (origin) => {
-      const allowedOrigins = ["http://localhost:3000", process.env.FRONTEND_URL].filter(Boolean);
-      return allowedOrigins.includes(origin) ? origin : "http://localhost:3000";
+    origin: (origin, c) => {
+      const allowedOrigins = [c.env.FRONTEND_URL, "http://localhost:3000"].filter(Boolean);
+      return allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
     },
     allowHeaders: ["Content-Type", "Authorization", "Cookie", "X-Requested-With"],
-    allowMethods: ["POST", "GET", "OPTIONS", "PUT", "DELETE"],
+    allowMethods: ["POST", "GET", "PUT", "DELETE", "OPTIONS"],
     exposeHeaders: ["Content-Length", "Set-Cookie"],
     maxAge: 600,
     credentials: true,
   }),
 );
 
+app.use(csrf());
+
+// 3. Auth Handler
 app.on(["POST", "GET"], "/api/auth/*", (c) => {
-  const auth = getAuth(c.env);
-  return auth.handler(c.req.raw);
+  return getAuth(c.env).handler(c.req.raw);
 });
 
 app.use("/api/*", async (c, next) => {
-  if (c.get("user") || c.req.method === "OPTIONS") return await next();
-  if (
-    c.req.path === "/api/auth/stripe/webhook" ||
-    c.req.method === "OPTIONS"
-  ) {
+  const publicPaths = ["/api/auth", "/api/auth/stripe/webhook"];
+  if (publicPaths.some(path => c.req.path.startsWith(path)) || c.req.method === "OPTIONS") {
     return await next();
   }
+
   const auth = getAuth(c.env);
   const session = await auth.api.getSession({ headers: c.req.raw.headers });
 
-  c.set("user", session?.user ?? null);
-  c.set("session", session?.session ?? null);
-  const user = c.get('user');
-  console.log(user)
-  if (!user) {
+  if (!session) {
     return c.json({ error: 'Unauthorized' }, 401);
   }
+
+  c.set("user", session.user);
+  c.set("session", session.session);
 
   await next();
 });
 
+// 5. Routes
 app.route('/api/schedules', schedules);
-app.route('/api/study-logs', studyLogs);
-app.route('/api/visualization', visualization)
+app.route('/api/achievements', achievements);
+app.route('/api/stats', stats);
 app.route('/api/ai-generate-tags', aiGenerateTags);
-app.route('api/study-schedules', studySchedules);
+app.route('/api/study-schedules', studySchedules);
 
 export default app;

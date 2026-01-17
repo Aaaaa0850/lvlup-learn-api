@@ -32,13 +32,7 @@ app.post('/', zValidator(
   })
 ), async (c) => {
   const { title, subtitle } = c.req.valid("json");
-  const user = c.get('user');
-  if (!user) {
-    return c.json({ error: "認証が必要です" }, 401);
-  }
-  /*if (user.isAnonymous) {
-    return c.json({ error: "AIタグ生成機能はアカウント登録後にご利用いただけます。" }, 403);
-  }*/
+  const user = c.get('user')!;
   const db = getDB(c.env);
   const plan = await db.select({ plan: subscription.plan }).from(subscription).where(eq(subscription.referenceId, user.id)).limit(1).then(result => result[0]?.plan ?? 'FREE');
   console.log(plan);
@@ -72,7 +66,7 @@ app.post('/', zValidator(
         },
         { role: 'user', content: `T: ${title}, M: ${subtitle}` }
       ],
-      temperature: 0.2,
+      temperature: 0.1,
     });
     console.log(response)
     const tagsJson = (response as any).response ?? response;
