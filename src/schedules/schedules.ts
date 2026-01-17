@@ -12,14 +12,26 @@ import {
 } from "../types/schedule";
 import { schedules } from "../../drizzle/schema";
 import { nanoid } from "nanoid/non-secure";
-import {
-  eq,
-  asc,
-  and,
-  desc,
-  sql
-} from 'drizzle-orm'
+import { eq, asc, and, desc, sql } from 'drizzle-orm'
 import { getDB } from "../lib/db";
+
+function getTomorrowJST() {
+  const d = new Date();
+  d.setMinutes(d.getMinutes() + d.getTimezoneOffset() + (9 * 60));
+  d.setDate(d.getDate() + 1);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+const scheduleSchema = z.object({
+  title: ScheduleTitle,
+  subtitle: ScheduleSubtitle,
+  duration: ScheduleDuration,
+  color: color,
+  tags: tags,
+});
 
 type Bindings = {
   TURSO_URL: string;
@@ -31,171 +43,93 @@ type Variables = {
   session: Session["session"] | null;
 }
 
-const app = new Hono<{ Bindings: Bindings, Variables: Variables }>()
+const app = new Hono<{ Bindings: Bindings, Variables: Variables }>();
 
-function generateTomorrowDate() {
-  const now = new Date();
-  const jstNow = new Date(now.getTime() + (9 * 60 * 60 * 1000));
-  const jstTomorrow = new Date(jstNow.getTime() + (24 * 60 * 60 * 1000));
-  return jstTomorrow.toISOString().split('T')[0];
-}
-
-const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-app.post('/', zValidator(
-  "json",
-  z.object({
-    title: ScheduleTitle,
-    subtitle: ScheduleSubtitle,
-    duration: ScheduleDuration,
-    color: color,
-    tags: tags,
-  }),
-  (result, c) => {
-    if (!result.success) {
-      console.log('Zod Validation Error:', result.error);
-      return c.json({ error: result.error }, 400);
-    }
-  }
-), async (c) => {
+app.post('/', zValidator("json", scheduleSchema), async (c) => {
   const db = getDB(c.env);
   const user = c.get('user')!;
-  const {
-    title,
-    subtitle,
-    duration,
-    color,
-    tags,
-  } = c.req.valid("json");
+  const body = c.req.valid("json");
+
   const id = nanoid();
-  const date = generateTomorrowDate();
+  const date = getTomorrowJST();
+
   try {
     await db.insert(schedules).values({
       id,
-      title,
-      subtitle,
-      duration,
-      color,
+      ...body,
       date,
-      tags: JSON.stringify(tags),
-      userId: user!.id,
+      tags: JSON.stringify(body.tags),
+      userId: user.id,
     });
-    await sleep(500);
-    return c.json({
-      id,
-      title,
-      subtitle,
-      duration,
-      color,
-      tags,
-    }, 201);
+
+    return c.json({ id, ...body }, 201);
   } catch (e) {
     console.error(e);
-    return c.json({ error: "スケジュールの保存に失敗しました" }, 500);
+    return c.json({ error: "保存に失敗しました" }, 500);
   }
-})
+});
 
 app.get('/', async (c) => {
   const db = getDB(c.env);
   const user = c.get('user')!;
-  const date = generateTomorrowDate()
-  try {
-    const result =
-      await db.select({
-        id: schedules.id,
-        title: schedules.title,
-        subtitle: schedules.subtitle,
-        duration: schedules.duration,
-        color: schedules.color,
-        tags: schedules.tags,
-      }
-      ).from(schedules)
-        .where(
-          and(
-            eq(schedules.userId, user.id)
-            , eq(schedules.date, date)))
-        .orderBy(
-          desc(sql`case when ${schedules.duration} is null then 1 else 0 end`),
-          asc(schedules.duration)
-        );
-    console.log(result);
-    const formattedResult = result.map(item => ({
-      ...item,
-      tags: item.tags ? (JSON.parse(item.tags as string) as string[]) : [],
-    }));
-    return c.json(formattedResult, 200);
-  } catch (e) {
-    console.error(e)
-    return c.json({ error: 'スケジュールの取得に失敗しました' }, 500);
-  }
-})
+  const date = getTomorrowJST();
 
-app.put('/', zValidator(
-  "json",
-  z.object({
-    id: ScheduleId,
-    title: ScheduleTitle,
-    subtitle: ScheduleSubtitle,
-    duration: ScheduleDuration,
-    color: color,
-    tags: tags,
-  }), (result, c) => {
-    if (!result.success) {
-      console.log('Zod Validation Error:', result.error);
-      return c.json({ error: result.error }, 400);
-    }
+  try {
+    const result = await db.select({
+      id: schedules.id,
+      title: schedules.title,
+      subtitle: schedules.subtitle,
+      duration: schedules.duration,
+      color: schedules.color,
+      tags: schedules.tags,
+    }).from(schedules)
+      .where(and(eq(schedules.userId, user.id), eq(schedules.date, date)))
+      .orderBy(
+        sql`CASE WHEN ${schedules.duration} IS NULL THEN 1 ELSE 0 END`,
+        asc(schedules.duration)
+      );
+
+    const formatted = result.map(({ tags, ...rest }) => ({
+      ...rest,
+      tags: tags ? (JSON.parse(tags as string) as string[]) : [],
+    }));
+
+    return c.json(formatted);
+  } catch (e) {
+    return c.json({ error: '取得に失敗しました' }, 500);
   }
-), async (c) => {
+});
+
+app.put('/', zValidator("json", scheduleSchema.extend({ id: ScheduleId })), async (c) => {
   const db = getDB(c.env);
   const user = c.get('user')!;
-  const {
-    id,
-    title,
-    subtitle,
-    duration,
-    color,
-    tags,
-  } = c.req.valid("json");
+  const { id, ...data } = c.req.valid("json");
+
   try {
-    await db.update(schedules)
-      .set(
-        {
-          title,
-          subtitle,
-          duration,
-          color,
-          tags: JSON.stringify(tags),
-        }
-      )
-      .where(
-        and(
-          eq(schedules.id, id),
-          eq(schedules.userId, user.id)
-        )
-      )
-    await sleep(500)
-    return c.json({
-      id,
-      title,
-      subtitle,
-      duration,
-      color,
-      tags,
-    }, 200);
+    const updated = await db.update(schedules)
+      .set({ ...data, tags: JSON.stringify(data.tags) })
+      .where(and(eq(schedules.id, id), eq(schedules.userId, user.id)))
+      .returning();
+
+    if (updated.length === 0) return c.json({ error: "対象が見つかりません" }, 404);
+
+    return c.json({ id, ...data });
   } catch (err) {
-    return c.json({ error: 'スケジュールの更新に失敗しました。' }, 500)
+    return c.json({ error: '更新に失敗しました' }, 500);
   }
-})
+});
 
 app.delete('/:id', async (c) => {
   const db = getDB(c.env);
   const user = c.get('user')!;
-  const id = c.req.param("id")
+  const id = c.req.param("id");
+
   try {
     await db.delete(schedules).where(and(eq(schedules.id, id), eq(schedules.userId, user.id)));
-    return c.json({ message: 'スケジュールの削除に成功しました' }, 200);
+    return c.json({ message: '削除に成功しました' });
   } catch (err) {
-    return c.json({ error: 'スケジュールの削除に失敗しました' }, 500);
+    return c.json({ error: '削除に失敗しました' }, 500);
   }
 });
+
 export default app;
