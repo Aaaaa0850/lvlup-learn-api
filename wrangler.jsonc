@@ -1,6 +1,6 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "lvlup_learn-api",
+	"name": "lvlup-learn-api",
 	"main": "src/index.ts",
 	"compatibility_flags": [
 		"nodejs_compat"
