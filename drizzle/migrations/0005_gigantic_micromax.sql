@@ -1,0 +1,1 @@
+ALTER TABLE `study_stats` RENAME COLUMN "study_hours" TO "study_minutes";

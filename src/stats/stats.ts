@@ -26,12 +26,13 @@ app.get('/summary', async (c) => {
   try {
     const result = await db.select({
       id: studyAchievements.id,
-      studyHours: studyAchievements.studyHours,
-      startDateTime: studyAchievements.startDateTime
+      studyMinutes: studyAchievements.studyMinutes,
+      date: studyAchievements.date
     }).from(studyAchievements)
       .where(eq(studyAchievements.userId, user!.id))
       .orderBy(asc(studyAchievements.startDateTime))
       .limit(500);
+    console.log(result);
     return c.json(result, 200);
   } catch (e) {
     return c.json({ error: "実績の取得に失敗しました" }, 500);
@@ -44,11 +45,12 @@ app.get('/:date', async (c) => {
   const date = c.req.param('date');
   try {
     const result = await db.select({
+      id: studyAchievements.id,
       title: studyAchievements.title,
       subtitle: studyAchievements.subtitle,
       startDateTime: studyAchievements.startDateTime,
       endDateTime: studyAchievements.endDateTime,
-      studyHours: studyAchievements.studyHours,
+      studyMinutes: studyAchievements.studyMinutes,
       tags: studyAchievements.tags
     }).from(studyAchievements)
       .where(
@@ -60,7 +62,11 @@ app.get('/:date', async (c) => {
       .orderBy(
         asc(studyAchievements.startDateTime)
       );
-    return c.json(result, 200);
+    const formattedResult = result.map(item => ({
+      ...item,
+      tags: item.tags ? (JSON.parse(item.tags as string) as string[]) : [],
+    }));
+    return c.json(formattedResult, 200);
   } catch (e) {
     console.error(e);
     return c.json({ error: "学習ログの取得に失敗しました。" }, 500);

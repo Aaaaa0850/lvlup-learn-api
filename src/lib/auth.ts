@@ -61,32 +61,30 @@ export const getAuth = (env: {
   });
   const db = getDB(env);
   return betterAuth({
-    secondaryStorage: {
-      get: async (key) => {
-        return await redis.get(key);
-      },
-      set: async (key, value, ttl) => {
-        if (ttl) await redis.set(key, value, { ex: ttl });
-        else await redis.set(key, value);
-      },
-      delete: async (key) => {
-        await redis.del(key);
-      }
-    },
     rateLimit: {
       enabled: true,
       window: 60,
       max: 100,
-      storage: "secondary-storage",
+      customStorage: {
+        get: async (key: string) => {
+          const data = await redis.get(key);
+          return data as { key: string; count: number; lastRequest: number } | undefined;
+        },
+        set: async (key: string, value: { key: string; count: number; lastRequest: number }, ttl?: number) => {
+          if (ttl) {
+            await redis.set(key, value, { ex: ttl });
+          } else {
+            const tt = 61;
+            await redis.set(key, value, { ex: tt });
+          }
+        },
+        delete: async (key: string) => {
+          await redis.del(key);
+        },
+      },
       customRules: {
-        "/api/study-schedules": {
-          window: 60,
-          max: 5,
-        },
-        "/api/schedules": {
-          window: 60,
-          max: 20,
-        },
+        "/api/study-schedules": { window: 60, max: 10 },
+        "/api/schedules": { window: 60, max: 20 },
       },
     },
     database: drizzleAdapter(db, {
@@ -94,16 +92,13 @@ export const getAuth = (env: {
       schema: schema,
     }),
     session: {
-      expiresIn: 7 * 24 * 60 * 60,
       cookieCache: {
         enabled: true,
-        maxAge: 7 * 24 * 60 * 60,
-        strategy: "jwe"
+        maxAge: 24 * 60 * 60,
+        strategy: "compact",
+        refreshCache: true,
       },
       storeSessionInDatabase: false,
-    },
-    account: {
-      storeAccountCookie: true,
     },
     plugins: [
       //anonymous(),

@@ -40,6 +40,8 @@ function generateTomorrowDate() {
   return jstTomorrow.toISOString().split('T')[0];
 }
 
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 app.post('/', zValidator(
   "json",
   z.object({
@@ -57,8 +59,7 @@ app.post('/', zValidator(
   }
 ), async (c) => {
   const db = getDB(c.env);
-  const user = c.get('user');
-  console.log(user)
+  const user = c.get('user')!;
   const {
     title,
     subtitle,
@@ -79,6 +80,7 @@ app.post('/', zValidator(
       tags: JSON.stringify(tags),
       userId: user!.id,
     });
+    await sleep(500);
     return c.json({
       id,
       title,
@@ -95,10 +97,7 @@ app.post('/', zValidator(
 
 app.get('/', async (c) => {
   const db = getDB(c.env);
-  const user = c.get('user');
-  if (!user) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
+  const user = c.get('user')!;
   const date = generateTomorrowDate()
   try {
     const result =
@@ -148,10 +147,7 @@ app.put('/', zValidator(
   }
 ), async (c) => {
   const db = getDB(c.env);
-  const user = c.get('user');
-  if (!user) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
+  const user = c.get('user')!;
   const {
     id,
     title,
@@ -177,6 +173,7 @@ app.put('/', zValidator(
           eq(schedules.userId, user.id)
         )
       )
+    await sleep(500)
     return c.json({
       id,
       title,
@@ -190,24 +187,10 @@ app.put('/', zValidator(
   }
 })
 
-app.delete('/', zValidator(
-  "json",
-  z.object({
-    id: ScheduleId,
-  }),
-  (result, c) => {
-    if (!result.success) {
-      console.log('Zod Validation Error:', result.error);
-      return c.json({ error: result.error }, 400);
-    }
-  }
-), async (c) => {
+app.delete('/:id', async (c) => {
   const db = getDB(c.env);
-  const user = c.get('user');
-  if (!user) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
-  const { id } = c.req.valid("json");
+  const user = c.get('user')!;
+  const id = c.req.param("id")
   try {
     await db.delete(schedules).where(and(eq(schedules.id, id), eq(schedules.userId, user.id)));
     return c.json({ message: 'スケジュールの削除に成功しました' }, 200);

@@ -131,7 +131,7 @@ export const studyAchievements = sqliteTable(
   startDateTime: text("start_date_time").notNull(),
   endDateTime: text("end_date_time").notNull(),
   date: text("date").notNull(),
-  studyHours: integer("study_hours").notNull(),
+  studyMinutes: integer("study_minutes").notNull(),
   tags: text("tags"),
   userId: text("user_id").references(() => user.id).notNull(),
   createdAt: text().default(sql`(CURRENT_TIMESTAMP)`),

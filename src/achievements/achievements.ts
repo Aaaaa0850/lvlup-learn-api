@@ -9,7 +9,7 @@ import {
   studyLogsSubtitle,
   startDateTime,
   endDateTime,
-  studyHours,
+  studyMinutes,
   tags,
   date,
 } from '../types/achievements';
@@ -36,7 +36,7 @@ app.post('/', zValidator(
     endDateTime: endDateTime,
     date: date,
     tags: tags,
-    studyHours: studyHours,
+    studyMinutes: studyMinutes,
   }),
 ), async (c) => {
   const db = getDB(c.env);
@@ -48,8 +48,9 @@ app.post('/', zValidator(
     endDateTime,
     date,
     tags,
-    studyHours
+    studyMinutes
   } = c.req.valid("json");
+  console.log(title, subtitle, startDateTime, endDateTime, date, tags, studyMinutes);
   const id = nanoid();
   try {
     await db.insert(studyAchievements).values({
@@ -59,7 +60,7 @@ app.post('/', zValidator(
       startDateTime,
       endDateTime,
       date,
-      studyHours,
+      studyMinutes,
       tags: JSON.stringify(tags),
       userId: user!.id
     });
