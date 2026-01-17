@@ -10,7 +10,7 @@
 		"PUBLIC_JWT_CACHE_KEY": "lvlup_learn_kv",
 		"BACKEND_URL": "http://localhost:8787",
 		"FRONTEND_URL": "http://localhost:3000",
-		"crossSubDomainCookies": "localhost",
+		"crossSubDomainCookies": "localhost"
 	},
 	/*"d1_databases": [
 		{
