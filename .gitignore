@@ -31,3 +31,8 @@ lerna-debug.log*
 
 # misc
 .DS_Store
+
+.vscode/
+lvlup-learn-firebase-adminsdk-fbsvc-7b90f9fa3c.json
+meta.json
+auth-schema.ts

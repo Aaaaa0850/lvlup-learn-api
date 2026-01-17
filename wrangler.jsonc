@@ -1,38 +1,62 @@
 {
-  "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "lvlup-learn-api",
-  "main": "src/index.ts",
-  "compatibility_date": "2025-12-16"
-  // "compatibility_flags": [
-  //   "nodejs_compat"
-  // ],
-  // "vars": {
-  //   "MY_VAR": "my-variable"
-  // },
-  // "kv_namespaces": [
-  //   {
-  //     "binding": "MY_KV_NAMESPACE",
-  //     "id": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-  //   }
-  // ],
-  // "r2_buckets": [
-  //   {
-  //     "binding": "MY_BUCKET",
-  //     "bucket_name": "my-bucket"
-  //   }
-  // ],
-  // "d1_databases": [
-  //   {
-  //     "binding": "MY_DB",
-  //     "database_name": "my-database",
-  //     "database_id": ""
-  //   }
-  // ],
-  // "ai": {
-  //   "binding": "AI"
-  // },
-  // "observability": {
-  //   "enabled": true,
-  //   "head_sampling_rate": 1
-  // }
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "lvlup_learn-api",
+	"main": "src/index.ts",
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	"compatibility_date": "2025-12-16",
+	"vars": {
+		"PUBLIC_JWT_CACHE_KEY": "lvlup_learn_kv",
+		"BACKEND_URL": "http://localhost:8787",
+		"FRONTEND_URL": "http://localhost:3000",
+		"crossSubDomainCookies": "localhost"
+	},
+	/*"d1_databases": [
+		{
+			"binding": "lvlup_learn",
+			"database_name": "lvlup-learn",
+			"database_id": "dd39676c-f075-4435-9ee0-03158e1c7a85",
+			"remote": true
+		}
+	],*/
+	"kv_namespaces": [
+		{
+			"binding": "lvlup_learn_kv",
+			"id": "2064d571e5244d7180875261c4f8b4e1",
+			"remote": true
+		}
+	],
+	"ai": {
+		"binding": "AI"
+	},
+	// "compatibility_flags": [
+	//   "nodejs_compat"
+	// ],
+	// "kv_namespaces": [
+	//   {
+	//     "binding": "MY_KV_NAMESPACE",
+	//     "id": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+	//   }
+	// ],
+	// "r2_buckets": [
+	//   {
+	//     "binding": "MY_BUCKET",
+	//     "bucket_name": "my-bucket"
+	//   }
+	// ],
+	// "d1_databases": [
+	//   {
+	//     "binding": "MY_DB",
+	//     "database_name": "my-database",
+	//     "database_id": ""
+	//   }
+	// ],
+	// "ai": {
+	//   "binding": "AI"
+	// },
+	// "observability": {
+	//   "enabled": true,
+	//   "head_sampling_rate": 1
+	// }
 }
